@@ -1,0 +1,89 @@
+:root{
+    /* 淺色主題默認值 */
+    --color-bg: #ffffff;
+    --color-text: #333333;
+    --color-text-rgb: 51, 51, 51;
+    --color-icon: #444444;
+    --color-primary: #2196f3;
+    --color-primary-light: #64b5f6;
+    --color-primary-dark: #1976d2;
+    --color-accent: #ff4081;
+    --border-color: #e0e0e0;
+    --border-hover: #bbbbbb;
+    --modal-bg: rgba(255, 255, 255, 0.95);
+    --hover-bg: rgba(0, 0, 0, 0.05);
+    --card-bg: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --neon-blue: #2196f3;
+    --silver-gray: #9e9e9e;
+    
+    /* 組件特定變量 */
+    --header-bg: #ffffff;
+    --header-text: #000000;
+    --header-border: #e5e7eb;
+    --user-actions-bg: rgba(0, 0, 0, 0.1);
+    --footer-bg: #f8f9fa;
+    --footer-text: #212529;
+    --footer-border: #e5e7eb;
+    
+    /* 過渡效果 */
+    --theme-transition: all 0.3s ease;
+}
+
+[data-theme="dark"] {
+    /* 深色主題覆蓋值 */
+    --color-bg: #121212;
+    --color-text: #f0f0f0;
+    --color-text-rgb: 240, 240, 240;
+    --color-icon: #e0e0e0;
+    --color-primary: #90caf9;
+    --color-primary-light: #a6d4fa;
+    --color-primary-dark: #648dae;
+    --color-accent: #ff80ab;
+    --border-color: #444444;
+    --border-hover: #666666;
+    --modal-bg: rgba(26, 26, 26, 0.95);
+    --hover-bg: rgba(255, 255, 255, 0.05);
+    --card-bg: #1e1e1e;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --text-primary: #ffffff;
+    --text-secondary: #adb5bd;
+    --neon-blue: #0dcaf0;
+    --silver-gray: #6c757d;
+    
+    /* 組件特定變量 */
+    --header-bg: #1a1a1a;
+    --header-text: #ffffff;
+    --header-border: #333333;
+    --user-actions-bg: rgba(255, 255, 255, 0.1);
+    --footer-bg: rgba(10, 26, 47, 0.98);
+    --footer-text: #ffffff;
+    --footer-border: #333333;
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.3s ease, color 0.2s ease;
+}
+
+.icon {
+    fill: var(--color-icon);
+}
+
+.primary-button {
+    background: var(--color-primary);
+    color: var(--color-bg);
+    transition: var(--theme-transition);
+}
+
+/* 圖像適配 */
+img.theme-adaptive {
+    filter: var(--img-filter, none);
+}
+
+[data-theme="dark"] img.theme-adaptive:not(.preserve-colors) {
+    filter: brightness(0.9) contrast(1.1);
+}

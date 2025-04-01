@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff"> <!-- 默认为浅色模式 -->
+  <title>会员系统</title>
+  <link rel="icon" href="/favicon.ico">
+  <!-- 预加载字体图标 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  
+  <!-- 主题初始化脚本 - 避免闪烁 -->
+  <script>
+    (function() {
+      // 获取存储的主题和系统偏好设置
+      var savedTheme = localStorage.getItem('theme');
+      var followsSystem = localStorage.getItem('followsSystem') === 'true';
+      var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // 决定使用的主题
+      var theme;
+      if (followsSystem) {
+        theme = systemPrefersDark ? 'dark' : 'light';
+      } else {
+        theme = savedTheme || 'light';
+      }
+      
+      // 应用主题到文档
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#121212');
+      }
+      
+      // 如果未保存设置，根据系统偏好设置默认主题
+      if (!savedTheme && !localStorage.getItem('followsSystem')) {
+        localStorage.setItem('theme', theme);
+        localStorage.setItem('followsSystem', 'true');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html> 

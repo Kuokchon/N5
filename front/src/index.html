@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff"> <!-- 默认为浅色模式 -->
+  <title>会员系统</title>
+  <link rel="icon" href="/favicon.ico">
+  <!-- 预加载字体图标 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  
+  <!-- 主题初始化脚本 - 避免闪烁 -->
+  <script>
+    (function() {
+      // 获取存储的主题和系统偏好设置
+      var savedTheme = localStorage.getItem('theme');
+      var followsSystem = localStorage.getItem('followsSystem') === 'true';
+      var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // 决定使用的主题
+      var theme;
+      if (followsSystem) {
+        theme = systemPrefersDark ? 'dark' : 'light';
+      } else {
+        theme = savedTheme || 'light';
+      }
+      
+      // 应用主题到文档
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#121212');
+      }
+      
+      // 如果未保存设置，根据系统偏好设置默认主题
+      if (!savedTheme && !localStorage.getItem('followsSystem')) {
+        localStorage.setItem('theme', theme);
+        localStorage.setItem('followsSystem', 'true');
+      }
+    })();
+  </script>
+  
+  <!-- 错误处理脚本 -->
+  <script>
+    // 全局错误处理
+    window.addEventListener('error', function(event) {
+      console.log('捕获到错误:', event.message);
+      // 阻止特定错误的传播
+      if (event.message && (
+          event.message.includes('Receiving end does not exist') || 
+          event.message.includes('videoInWhiteList')
+      )) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    }, true);
+
+    // Promise 错误处理
+    window.addEventListener('unhandledrejection', function(event) {
+      console.log('未处理的Promise拒绝:', event.reason);
+      // 阻止特定Promise错误的传播
+      if (event.reason && (
+          (event.reason.message && event.reason.message.includes('Receiving end does not exist')) || 
+          (event.reason.toString && event.reason.toString().includes('videoInWhiteList'))
+      )) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    });
+
+    // 设置空对象防止undefined错误
+    window.chrome = window.chrome || {};
+    window.chrome.runtime = window.chrome.runtime || {};
+    window.chrome.runtime.sendMessage = window.chrome.runtime.sendMessage || function() {
+      return Promise.resolve();
+    };
+    
+    // 添加清除本地存储方法（用于重置登录状态）
+    function clearLoginState() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('theme');
+      localStorage.removeItem('followsSystem');
+      alert('登录状态已重置，请刷新页面重试');
+      window.location.href = '/login';
+    }
+  </script>
+  
+  <!-- 开发调试工具 -->
+  <style>
+    #dev-tools {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 4px;
+      font-size: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+    #dev-tools:hover {
+      opacity: 1;
+    }
+    #dev-tools button {
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      margin-left: 5px;
+    }
+    #dev-tools button:hover {
+      background: #d32f2f;
+    }
+    #dev-tools .tools-content {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    #dev-tools:hover .tools-content {
+      display: block;
+    }
+    #dev-tools input {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 4px;
+      border-radius: 2px;
+      width: 280px;
+      font-size: 11px;
+    }
+    #dev-tools .api-controls {
+      display: flex;
+      align-items: center;
+      margin-top: 5px;
+    }
+    #dev-tools .api-controls button {
+      margin-left: 5px;
+      background: #2196F3;
+    }
+    #dev-tools .api-controls button:hover {
+      background: #1976D2;
+    }
+  </style>
+  
+  <!-- 添加API設置函數 -->
+  <script>
+    function setApiUrl() {
+      const input = document.getElementById('api-url-input');
+      if(input && input.value.trim() !== '') {
+        localStorage.setItem('api_base_url', input.value.trim());
+        alert('API地址已設置為: ' + input.value.trim() + '\n將重新加載頁面');
+        window.location.reload();
+      }
+    }
+    
+    // 測試API連接
+    document.addEventListener('DOMContentLoaded', function() {
+      // 添加API測試按鈕到頁面
+      const btn = document.createElement('button');
+      btn.className = 'fixed bottom-4 right-4 z-50 bg-blue-500 hover:bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>';
+      document.body.appendChild(btn);
+      
+      // 創建結果面板
+      const panel = document.createElement('div');
+      panel.className = 'fixed bottom-16 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 w-72 transition-all duration-300';
+      panel.style.display = 'none';
+      panel.innerHTML = `
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">API連接測試結果</h3>
+        <div id="api-test-results" class="space-y-2 max-h-60 overflow-auto">
+          <div class="text-sm text-gray-600 dark:text-gray-300">點擊測試按鈕開始檢測</div>
+        </div>
+      `;
+      document.body.appendChild(panel);
+      
+      // 切換顯示面板
+      btn.onclick = () => {
+        if (panel.style.display === 'none') {
+          panel.style.display = 'block';
+          testApiConnections();
+        } else {
+          panel.style.display = 'none';
+        }
+      };
+      
+      // API測試函數
+      async function testApiConnections() {
+        const resultsDiv = document.getElementById('api-test-results');
+        resultsDiv.innerHTML = '<div class="text-sm text-gray-600 dark:text-gray-300">測試中...</div>';
+        
+        const endpoints = [
+          'http://localhost:3000/',
+          'http://localhost:3000/api'
+        ];
+        
+        let results = '';
+        
+        for (const url of endpoints) {
+          try {
+            const startTime = Date.now();
+            const response = await fetch(url, { 
+              method: 'HEAD',
+              cache: 'no-cache',
+              headers: { 'Accept': '*/*' }
+            });
+            const endTime = Date.now();
+            const latency = endTime - startTime;
+            
+            results += `
+              <div class="p-2 rounded-md ${response.ok ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium ${response.ok ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}">
+                    ${url}
+                  </span>
+                  <span class="text-xs font-bold px-2 py-1 rounded ${response.ok ? 'bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200' : 'bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200'}">
+                    ${response.ok ? response.status + ' OK' : 'Failed'}
+                  </span>
+                </div>
+                ${response.ok ? `
+                  <div class="text-xs mt-1 text-green-700 dark:text-green-300">
+                    響應時間: ${latency}ms
+                  </div>
+                  <button onclick="useApiUrl('${url}')" class="text-xs mt-1 px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    使用此API
+                  </button>
+                ` : ''}
+              </div>
+            `;
+          } catch (error) {
+            results += `
+              <div class="p-2 rounded-md bg-red-100 dark:bg-red-900">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium text-red-800 dark:text-red-200">
+                    ${url}
+                  </span>
+                  <span class="text-xs font-bold px-2 py-1 rounded bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200">
+                    Failed to fetch
+                  </span>
+                </div>
+              </div>
+            `;
+          }
+        }
+        
+        resultsDiv.innerHTML = results;
+      }
+      
+      // 設置API地址的全局函數
+      window.useApiUrl = function(url) {
+        localStorage.setItem('api_base_url', url);
+        alert(`API地址已設置為: ${url}\n請刷新頁面以應用更改`);
+      };
+    });
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+  
+  <!-- 调试工具栏 -->
+  <div id="dev-tools">
+    開發模式 <button onclick="clearLoginState()">重置登錄</button>
+    
+    <div class="tools-content">
+      <div>
+        <strong>API 設置</strong>
+        <div class="api-controls">
+          <input id="api-url-input" placeholder="輸入API地址，例如: http://localhost:3000/" />
+          <button onclick="setApiUrl()">設置</button>
+        </div>
+        <div style="margin-top:8px;font-size:10px;opacity:0.7;">
+          當前API地址: <span id="current-api"></span>
+          <br>
+          API狀態: <span id="api-status">未檢查</span>
+          <button onclick="testApiConnections()" style="font-size:9px;padding:2px 4px;background:#555;">檢查</button>
+        </div>
+      </div>
+      
+      <div style="margin-top:12px;">
+        <strong>用戶操作</strong>
+        <div class="api-controls">
+          <button onclick="clearUserData()" style="background:#FF9800;">清除用戶數據</button>
+          <button onclick="forceReload()" style="background:#2196F3;">強制刷新</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 清除用戶相關所有數據
+    function clearUserData() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('lastLoginEmail');
+      sessionStorage.clear();
+      console.log('已清除所有用戶相關數據');
+      alert('用戶數據已清除');
+    }
+    
+    // 強制刷新頁面，清除緩存
+    function forceReload() {
+      window.location.reload(true);
+    }
+  </script>
+  
+  <!-- 增加API狀態信息面板 -->
+  <div id="debug-panel" style="position: fixed; bottom: 10px; right: 10px; z-index: 9999; background-color: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 400px; display: none;">
+    <div style="margin-bottom:5px;">
+      <strong>API狀態:</strong> <span id="api-status">檢查中...</span>
+    </div>
+    <div style="margin-bottom:5px;">
+      <strong>API地址:</strong> <span id="api-url">-</span>
+    </div>
+    <div style="margin-bottom:5px;">
+      <strong>登錄狀態:</strong> <span id="login-status">檢查中...</span>
+    </div>
+    <div>
+      <strong>版本:</strong> <span id="app-version">1.2.3</span>
+    </div>
+    <div id="api-tip"></div>
+    <div style="margin-top:10px;">
+      <input id="custom-api-url" type="text" placeholder="自定義API地址" style="width:100%;padding:5px;margin-bottom:5px;color:#000;">
+      <button id="set-api-url" style="padding:3px 5px;background:#4CAF50;border:none;color:white;cursor:pointer;">設置API地址</button>
+      <button id="reset-api-url" style="padding:3px 5px;background:#F44336;border:none;color:white;cursor:pointer;margin-left:5px;">重置</button>
+    </div>
+  </div>
+  
+  <script>
+    // 增加API狀態信息面板
+    document.addEventListener('DOMContentLoaded', function() {
+      const debugPanel = document.createElement('div');
+      debugPanel.id = 'debug-panel';
+      debugPanel.style.position = 'fixed';
+      debugPanel.style.bottom = '10px';
+      debugPanel.style.right = '10px';
+      debugPanel.style.zIndex = '9999';
+      debugPanel.style.backgroundColor = 'rgba(0,0,0,0.7)';
+      debugPanel.style.color = '#fff';
+      debugPanel.style.padding = '10px';
+      debugPanel.style.borderRadius = '5px';
+      debugPanel.style.fontSize = '12px';
+      debugPanel.style.maxWidth = '400px';
+      debugPanel.style.display = 'none'; // 默認隱藏
+      
+      debugPanel.innerHTML = `
+        <div style="margin-bottom:5px;">
+          <strong>API狀態:</strong> <span id="api-status">檢查中...</span>
+        </div>
+        <div style="margin-bottom:5px;">
+          <strong>API地址:</strong> <span id="api-url">-</span>
+        </div>
+        <div style="margin-bottom:5px;">
+          <strong>登錄狀態:</strong> <span id="login-status">檢查中...</span>
+        </div>
+        <div>
+          <strong>版本:</strong> <span id="app-version">1.2.3</span>
+        </div>
+        <div id="api-tip"></div>
+        <div style="margin-top:10px;">
+          <input id="custom-api-url" type="text" placeholder="自定義API地址" style="width:100%;padding:5px;margin-bottom:5px;color:#000;">
+          <button id="set-api-url" style="padding:3px 5px;background:#4CAF50;border:none;color:white;cursor:pointer;">設置API地址</button>
+          <button id="reset-api-url" style="padding:3px 5px;background:#F44336;border:none;color:white;cursor:pointer;margin-left:5px;">重置</button>
+        </div>
+      `;
+      
+      document.body.appendChild(debugPanel);
+      
+      // Alt+D 快捷鍵顯示/隱藏調試面板
+      document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 'd') {
+          debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+        }
+      });
+      
+      // 設置API地址
+      document.getElementById('set-api-url').addEventListener('click', function() {
+        const newUrl = document.getElementById('custom-api-url').value.trim();
+        if (newUrl) {
+          localStorage.setItem('api_base_url', newUrl);
+          document.getElementById('api-url').textContent = newUrl;
+          alert('API地址已更新，頁面將重新加載');
+          window.location.reload();
+        }
+      });
+      
+      // 重置API地址
+      document.getElementById('reset-api-url').addEventListener('click', function() {
+        localStorage.removeItem('api_base_url');
+        document.getElementById('custom-api-url').value = '';
+        document.getElementById('api-url').textContent = '默認';
+        alert('API地址已重置為默認值，頁面將重新加載');
+        window.location.reload();
+      });
+      
+      // 更新API地址顯示
+      document.getElementById('api-url').textContent = localStorage.getItem('api_base_url') || '默認';
+      
+      // 更新登錄狀態
+      const token = localStorage.getItem('token');
+      document.getElementById('login-status').textContent = token ? '已登錄' : '未登錄';
+      
+      // 檢查API連接
+      testApiConnections();
+    });
+  </script>
+  
+  <script>
+    function checkApiConnection() {
+      testApiConnections();
+    }
+  </script>
+</body>
+</html> 

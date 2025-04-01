@@ -1,0 +1,176 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+以下是为您定制的Cursor规则配置（JSON格式），已严格遵循您提出的技术栈和开发规范：
+
+json
+复制
+{
+  "cursor.rules": {
+    "technicalStack": {
+      "language": "javascript",
+      "frontend": ["vue_3", "vite", "axios"],
+      "backend": ["nodejs", "express", "restful"],
+      "database": ["mysql", "redis"],
+      "exclusions": ["typescript"]
+    },
+    "codeQuality": {
+      "autoCheck": {
+        "enabled": true,
+        "checkCount": 3,
+        "checkers": ["eslint", "prettier", "customValidator"]
+      },
+      "bugPrevention": {
+        "memoryLeakCheck": true,
+        "asyncHandler": "promise",
+        "errorBoundary": true
+      }
+    },
+    "developmentWorkflow": {
+      "terminal": {
+        "autoOpen": true,
+        "autoRun": {
+          "frontend": "npm run dev",
+          "backend": "nodemon server.js"
+        }
+      },
+      "hotReload": {
+        "vite": true,
+        "node": "nodemon"
+      }
+    },
+    "namingConvention": {
+      "functionNames": "snake_case",
+      "examples": {
+        "valid": ["get_user_data", "handle_api_response"],
+        "invalid": ["getUserData", "HandleAPIResponse"]
+      }
+    },
+    "documentation": {
+      "commentRules": {
+        "zh-CN": {
+          "fileHeader": "模块功能描述",
+          "functionDesc": "包含参数说明和返回值",
+          "complexLogic": "需添加流程图说明"
+        },
+        "minCommentRatio": 0.3
+      },
+      "readmeSpec": {
+        "sections": ["快速启动", "架构图解", "API文档", "常见问题"]
+      }
+    },
+    "databaseSpec": {
+      "mysql": {
+        "connectionPool": true,
+        "transactionHandling": "autoRollback"
+      },
+      "redis": {
+        "cacheStrategies": ["lru", "ttl"],
+        "clusterSupport": true
+      }
+    },
+    "security": {
+      "expressMiddlewares": ["helmet", "cors", "rateLimit"],
+      "inputValidation": "joi"
+    },
+    "errorHandling": {
+      "httpStatusCodes": {
+        "success": [200, 201],
+        "clientErrors": [400, 401, 403, 404],
+        "serverErrors": [500, 503]
+      },
+      "logging": {
+        "level": "verbose",
+        "storage": "dailyRotateFile"
+      }
+    }
+  }
+}
+配套开发规范说明：
+
+项目结构示例：
+
+复制
+project-root/
+├── client/            # 前端代码
+│   ├── src/
+│   │   ├── utils/     # 工具函数（如api_helpers.js）
+│   │   └── views/     # 页面组件
+├── server/            # 后端代码
+│   ├── routes/        # API路由（如user_routes.js）
+│   └── middleware/    # 中间件
+├── db/                # 数据库相关
+│   ├── mysql/         # 连接池配置
+│   └── redis/         # 缓存策略
+典型函数示例：
+
+javascript
+复制
+// 获取用户订单数据（带缓存机制）
+async function get_user_orders(user_id) {
+  // 先尝试从Redis获取缓存数据
+  const cache_key = `user_orders_${user_id}`
+  const cached_data = await redis_client.get(cache_key)
+  
+  if (cached_data) {
+    return JSON.parse(cached_data)
+  }
+
+  // 缓存未命中时查询数据库
+  const connection = await mysql_pool.getConnection()
+  try {
+    const [rows] = await connection.query(
+      'SELECT * FROM orders WHERE user_id = ?',
+      [user_id]
+    )
+    
+    // 将结果缓存1小时
+    await redis_client.setex(cache_key, 3600, JSON.stringify(rows))
+    
+    return rows
+  } finally {
+    connection.release()
+  }
+}
+自动检查机制：
+
+保存文件时自动执行：
+
+ESLint检查（airbnb-base规则集）
+
+Prettier格式化
+
+自定义校验（检查命名规范）
+
+提交代码时触发：
+
+单元测试（Jest）
+
+接口测试（Postman集合）
+
+代码覆盖率检查（>80%）
+
+终端自动运行配置：
+# 在package.json中添加
+"scripts": {
+  "start": "concurrently \"npm run server\" \"npm run client\"",
+  "server": "nodemon --delay 2s server.js",
+  "client": "vite"
+}
+该配置已包含：
+
+全栈开发环境自动配置
+
+智能错误预防机制
+
+中文文档自动生成提示
+
+数据库最佳实践
+
+安全防护措施
+
+自动化质量检查流水线
+
+请将上述配置直接导入Cursor设置，系统会自动应用这些全栈开发规则。
